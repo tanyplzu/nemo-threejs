@@ -1,0 +1,83 @@
+# WebGL 例子
+
+## 动态绘制
+
+### HTML 部分
+
+```js
+ <!-- 顶点着色器源码 -->
+<script type="shader-source" id="vertexShader">
+  precision mediump float;
+  //接收点在 canvas 坐标系上的坐标 (x, y)
+  attribute vec2 a_Position;
+  //接收 canvas 窗口尺寸(width, height)
+  attribute vec2 a_Screen_Size;
+  void main(){
+    //将屏幕坐标系转化为 GLSL 限定的坐标值（NDC坐标系）
+      vec2 position = (a_Position / a_Screen_Size) * 2.0 - 1.0;
+      position = position * vec2(1.0, -1.0);
+      gl_Position = vec4(position, 0, 1);
+      //声明要绘制的点的大小。
+      gl_PointSize = 10.0;
+  }
+</script>
+
+<!-- 片元着色器源码 -->
+<script type="shader-source" id="fragmentShader">
+  precision mediump float;
+  //接收 JavaScript 传过来的颜色值（rgba）。
+  uniform vec4 u_Color;
+  void main(){
+      vec4 color = u_Color / vec4(255, 255, 255, 1);
+      gl_FragColor = color;
+  }
+  </script>
+
+<canvas id="canvas"></canvas>
+```
+
+### JavaScript 程序
+
+```js
+...省略着色器创建部分。
+//找到顶点着色器中的变量a_Position
+var a_Position = gl.getAttribLocation(program, 'a_Position');
+//找到顶点着色器中的变量a_Screen_Size
+var a_Screen_Size = gl.getAttribLocation(program, 'a_Screen_Size');
+//找到片元着色器中的变量u_Color
+var u_Color = gl.getUniformLocation(program, 'u_Color');
+//为顶点着色器中的 a_Screen_Size 传递 canvas 的宽高信息
+gl.vertexAttrib2f(a_Screen_Size, canvas.width, canvas.height);
+//存储点击位置的数组。
+var points = [];
+canvas.addEventListener('click', e => {
+  var x = e.pageX;
+  var y = e.pageY;
+  var color = randomColor();
+  points.push({ x: x, y: y, color: color })
+  gl.clearColor(0, 0, 0, 1.0);
+  //用上一步设置的清空画布颜色清空画布。
+  gl.clear(gl.COLOR_BUFFER_BIT);
+  for (let i = 0; i < points.length; i++) {
+    var color = points[i].color;
+    //为片元着色器中的 u_Color 传递随机颜色
+    gl.uniform4f(u_Color, color.r, color.g, color.b, color.a);
+    //为顶点着色器中的 a_Position 传递顶点坐标。
+    gl.vertexAttrib2f(a_Position, points[i].x, points[i].y);
+    //绘制点
+    gl.drawArrays(gl.POINTS, 0, 1);
+  }
+})
+// 设置清屏颜色
+gl.clearColor(0, 0, 0, 1.0);
+// 用上一步设置的清空画布颜色清空画布。
+gl.clear(gl.COLOR_BUFFER_BIT);
+```
+
+## 线段
+
+线段图元分为三种：
+
+- LINES：基本线段。
+- LINE_STRIP：带状线段。
+- LINE_LOOP：环状线段。
