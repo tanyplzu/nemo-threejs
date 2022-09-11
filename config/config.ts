@@ -11,7 +11,6 @@ export default defineConfig({
   // base: '/nemo-threejs',
   publicPath: '/',
   base: '/',
-  exportStatic: {}, // 将所有路由输出为 HTML 目录结构，以免刷新页面时 404
   resolve: {
     includes: ['docs', 'src'],
   },
@@ -37,14 +36,6 @@ export default defineConfig({
     {
       title: 'example',
       path: '/example',
-    },
-    {
-      title: '学习笔记',
-      path: '/learn',
-    },
-    {
-      title: 'Gitee',
-      path: 'https://gitee.com/tanyplzu/dumi-app',
     },
   ],
   menus: {
