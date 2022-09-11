@@ -72,6 +72,7 @@ export default defineConfig({
           '/threejs/api.md',
           '/threejs/Vector3_1.md',
           '/threejs/Vector3_2.md',
+          '/threejs/Matrix4.md',
           '/threejs/类型化数组.md',
         ],
       },
