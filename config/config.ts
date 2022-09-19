@@ -57,9 +57,10 @@ export default defineConfig({
         title: 'WebGL 基础',
         children: [
           '/webgl/index.md',
-          '/webgl/WebGL&Three/',
           '/webgl/example.md',
+          '/webgl/WebGL&Three/',
           '/webgl/buffer.md',
+          '/webgl/referenceMaterial.md',
         ],
       },
     ],

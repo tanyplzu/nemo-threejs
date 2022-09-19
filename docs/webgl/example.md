@@ -2,82 +2,168 @@
 
 ## 动态绘制
 
-### HTML 部分
+```html
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>动态绘制点</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="../css/common.css" />
+  </head>
+  <body>
+    <canvas id="canvas"></canvas>
+    <div class="tips">点击屏幕试一下</div>
 
-```js
- <!-- 顶点着色器源码 -->
-<script type="shader-source" id="vertexShader">
-  precision mediump float;
-  //接收点在 canvas 坐标系上的坐标 (x, y)
-  attribute vec2 a_Position;
-  //接收 canvas 窗口尺寸(width, height)
-  attribute vec2 a_Screen_Size;
-  void main(){
-    //将屏幕坐标系转化为 GLSL 限定的坐标值（NDC坐标系）
-      vec2 position = (a_Position / a_Screen_Size) * 2.0 - 1.0;
-      position = position * vec2(1.0, -1.0);
-      gl_Position = vec4(position, 0, 1);
-      //声明要绘制的点的大小。
-      gl_PointSize = 10.0;
-  }
-</script>
+    <script type="shader-source" id="vertexShader">
+      //浮点数设置为中等精度
+      precision mediump float;
+      //接收 JavaScript 传递过来的点的坐标（X, Y）
+      attribute vec2 a_Position;
+      // 接收canvas的尺寸。
+      attribute vec2 a_Screen_Size;
+      void main(){
+      	// 将 canvas 的坐标值 转换为 [-1.0, 1.0]的范围。
+      	vec2 position = (a_Position / a_Screen_Size) * 2.0 - 1.0;
+      	// canvas的 Y 轴坐标方向和 设备坐标系的相反。
+      	position = position * vec2(1.0, -1.0);
+      	// 最终的顶点坐标。
+      	gl_Position = vec4(position, 0.0, 1.0);
+      	// 点的大小。
+      	gl_PointSize = 10.0;
+      }
+    </script>
 
-<!-- 片元着色器源码 -->
-<script type="shader-source" id="fragmentShader">
-  precision mediump float;
-  //接收 JavaScript 传过来的颜色值（rgba）。
-  uniform vec4 u_Color;
-  void main(){
-      vec4 color = u_Color / vec4(255, 255, 255, 1);
-      gl_FragColor = color;
-  }
-  </script>
+    <script type="shader-source" id="fragmentShader">
+      //浮点数设置为中等精度
+      precision mediump float;
+      //全局变量，用来接收 JavaScript传递过来的颜色。
+      uniform vec4 u_Color;
+      void main(){
+      	// 将颜色处理成 GLSL 允许的范围[0， 1]。
+      	vec4 color = u_Color / vec4(255, 255, 255, 1);
+      	// 点的最终颜色。
+      	gl_FragColor = color;
+      }
+    </script>
 
-<canvas id="canvas"></canvas>
+    <script src="../utils/webgl-helper.js"></script>
+
+    <script>
+      //获取canvas
+      let canvas = getCanvas('#canvas');
+
+      //设置canvas尺寸为满屏
+      resizeCanvas(canvas);
+
+      //获取绘图上下文
+      let gl = getContext(canvas);
+
+      //创建定点着色器
+      let vertexShader = createShaderFromScript(
+        gl,
+        gl.VERTEX_SHADER,
+        'vertexShader',
+      );
+
+      //创建片元着色器
+      let fragmentShader = createShaderFromScript(
+        gl,
+        gl.FRAGMENT_SHADER,
+        'fragmentShader',
+      );
+
+      //创建着色器程序
+      let program = createSimpleProgram(gl, vertexShader, fragmentShader);
+      //使用该着色器程序
+      gl.useProgram(program);
+
+      //获取顶点着色器中的变量a_Position的位置。
+      let a_Position = gl.getAttribLocation(program, 'a_Position');
+
+      //获取顶点着色器中的变量a_Screen_Size的位置。
+      let a_Screen_Size = gl.getAttribLocation(program, 'a_Screen_Size');
+
+      //获取片元着色器中的变量u_Color的位置。
+      let u_Color = gl.getUniformLocation(program, 'u_Color');
+
+      //向顶点着色器的 a_Screen_Size 传递 canvas 尺寸信息。
+      gl.vertexAttrib2f(a_Screen_Size, canvas.width, canvas.height);
+
+      //存储区顶点信息的容器
+      let points = [];
+
+      canvas.addEventListener('click', e => {
+        let x = e.pageX;
+        let y = e.pageY;
+        let color = randomColor();
+
+        //存储新的点的坐标和颜色。
+        points.push({ x: x, y: y, color: color });
+        render(gl);
+      });
+
+      //绘制函数
+      function render(gl) {
+        //清除屏幕
+        gl.clear(gl.COLOR_BUFFER_BIT);
+        for (let i = 0; i < points.length; i++) {
+          let color = points[i].color;
+          //向片元着色器传递颜色信息
+          gl.uniform4f(u_Color, color.r, color.g, color.b, color.a);
+          //向顶点着色器传递坐标信息。
+          gl.vertexAttrib2f(a_Position, points[i].x, points[i].y);
+          //绘制点。
+          gl.drawArrays(gl.POINTS, 0, 1);
+        }
+      }
+
+      //设置屏幕清除颜色为黑色。
+      gl.clearColor(0, 0, 0, 1.0);
+
+      //绘制
+      render(gl);
+    </script>
+  </body>
+</html>
 ```
 
-### JavaScript 程序
+## 解释
 
-```js
-...省略着色器创建部分。
-//找到顶点着色器中的变量a_Position
-var a_Position = gl.getAttribLocation(program, 'a_Position');
-//找到顶点着色器中的变量a_Screen_Size
-var a_Screen_Size = gl.getAttribLocation(program, 'a_Screen_Size');
-//找到片元着色器中的变量u_Color
-var u_Color = gl.getUniformLocation(program, 'u_Color');
-//为顶点着色器中的 a_Screen_Size 传递 canvas 的宽高信息
-gl.vertexAttrib2f(a_Screen_Size, canvas.width, canvas.height);
-//存储点击位置的数组。
-var points = [];
-canvas.addEventListener('click', e => {
-  var x = e.pageX;
-  var y = e.pageY;
-  var color = randomColor();
-  points.push({ x: x, y: y, color: color })
-  gl.clearColor(0, 0, 0, 1.0);
-  //用上一步设置的清空画布颜色清空画布。
-  gl.clear(gl.COLOR_BUFFER_BIT);
-  for (let i = 0; i < points.length; i++) {
-    var color = points[i].color;
-    //为片元着色器中的 u_Color 传递随机颜色
-    gl.uniform4f(u_Color, color.r, color.g, color.b, color.a);
-    //为顶点着色器中的 a_Position 传递顶点坐标。
-    gl.vertexAttrib2f(a_Position, points[i].x, points[i].y);
-    //绘制点
-    gl.drawArrays(gl.POINTS, 0, 1);
-  }
-})
-// 设置清屏颜色
-gl.clearColor(0, 0, 0, 1.0);
-// 用上一步设置的清空画布颜色清空画布。
-gl.clear(gl.COLOR_BUFFER_BIT);
-```
+### GLSL
 
-## 线段
+- gl_Position： 内置变量，用来设置顶点坐标。
+- gl_PointSize： 内置变量，用来设置顶点大小。
+- vec2：2 维向量容器，可以存储 2 个浮点数。
+- gl_FragColor： 内置变量，用来设置像素颜色。
+- vec4：4 维向量容器，可以存储 4 个浮点数。
+- precision：精度设置限定符，使用此限定符设置完精度后，之后所有该数据类型都将沿用该精度，除非单独设置。
+- 运算符：向量的对应位置进行运算，得到一个新的向量。
+  - vec _ 浮点数： vec2(x, y) _ 2.0 = vec(x _ 2.0, y _ 2.0)。
+  - vec2 _ vec2：vec2(x1, y1) _ vec2(x2, y2) = vec2(x1 _ x2, y1 _ y2)。
+  - 加减乘除规则基本一致。但是要注意一点，如果参与运算的是两个 vec 向量，那么这两个 vec 的维数必须相同。
 
-线段图元分为三种：
+### JavaScript 程序如何连接着色器程序
 
-- LINES：基本线段。
-- LINE_STRIP：带状线段。
-- LINE_LOOP：环状线段。
+- createShader：创建着色器对象
+- shaderSource：提供着色器源码
+- compileShader：编译着色器对象
+- createProgram：创建着色器程序
+- attachShader：绑定着色器对象
+- linkProgram：链接着色器程序
+- useProgram：启用着色器程序
+
+### JavaScript 如何往着色器中传递数据
+
+- getAttribLocation：找到着色器中的 attribute 变量地址。
+- getUniformLocation：找到着色器中的 uniform 变量地址。
+- vertexAttrib2f：给 attribute 变量传递两个浮点数。
+- uniform4f：给 uniform 变量传递四个浮点数。
+
+### WebGL 绘制函数
+
+- drawArrays: 用指定的图元进行绘制。
+
+### WebGL 图元
+
+- gl.POINTS: 将绘制图元类型设置成点图元。
