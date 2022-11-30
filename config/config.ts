@@ -63,6 +63,10 @@ export default defineConfig({
           '/webgl/referenceMaterial.md',
         ],
       },
+      {
+        title: 'GLSL 基础',
+        children: ['/webgl/GLSL/GLSL1.md', '/webgl/GLSL/GLSL2.md'],
+      },
     ],
     '/threejs': [
       {
