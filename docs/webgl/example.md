@@ -23,14 +23,14 @@
       // 接收canvas的尺寸。
       attribute vec2 a_Screen_Size;
       void main(){
-      	// 将 canvas 的坐标值 转换为 [-1.0, 1.0]的范围。
-      	vec2 position = (a_Position / a_Screen_Size) * 2.0 - 1.0;
-      	// canvas的 Y 轴坐标方向和 设备坐标系的相反。
-      	position = position * vec2(1.0, -1.0);
-      	// 最终的顶点坐标。
-      	gl_Position = vec4(position, 0.0, 1.0);
-      	// 点的大小。
-      	gl_PointSize = 10.0;
+        // 将 canvas 的坐标值 转换为 [-1.0, 1.0]的范围。
+        vec2 position = (a_Position / a_Screen_Size) * 2.0 - 1.0;
+        // canvas的 Y 轴坐标方向和 设备坐标系的相反。
+        position = position * vec2(1.0, -1.0);
+        // 最终的顶点坐标。
+        gl_Position = vec4(position, 0.0, 1.0);
+        // 点的大小。
+        gl_PointSize = 10.0;
       }
     </script>
 
@@ -40,10 +40,10 @@
       //全局变量，用来接收 JavaScript传递过来的颜色。
       uniform vec4 u_Color;
       void main(){
-      	// 将颜色处理成 GLSL 允许的范围[0， 1]。
-      	vec4 color = u_Color / vec4(255, 255, 255, 1);
-      	// 点的最终颜色。
-      	gl_FragColor = color;
+        // 将颜色处理成 GLSL 允许的范围[0， 1]。
+        vec4 color = u_Color / vec4(255, 255, 255, 1);
+        // 点的最终颜色。
+        gl_FragColor = color;
       }
     </script>
 
@@ -123,9 +123,82 @@
 
       //绘制
       render(gl);
+
     </script>
   </body>
 </html>
+```
+
+```js
+// webgl-helper.js
+var random = Math.random;
+function randomColor() {
+  return {
+    r: random() * 255,
+    g: random() * 255,
+    b: random() * 255,
+    a: random() * 1
+  };
+}
+
+function resizeCanvas(canvas, width, height) {
+  if (canvas.width !== width) {
+    canvas.width = width ? width : window.innerWidth;
+  }
+  if (canvas.height !== height) {
+    canvas.height = height ? height : window.innerHeight;
+  }
+}
+
+function createShader(gl, type, source) {
+  let shader = gl.createShader(type);
+  gl.shaderSource(shader, source);
+  gl.compileShader(shader);
+  //检测是否编译正常。
+  let success = gl.getShaderParameter(shader, gl.COMPILE_STATUS);
+  if (success) {
+    return shader;
+  }
+  console.error(gl.getShaderInfoLog(shader));
+  gl.deleteShader(shader);
+}
+
+function createShaderFromScript(gl, type, scriptId) {
+  let sourceScript = $$('#' + scriptId);
+  if (!sourceScript) {
+    return null;
+  }
+  return createShader(gl, type, sourceScript.innerHTML);
+}
+
+function createSimpleProgram(gl, vertexShader, fragmentShader) {
+  if (!vertexShader || !fragmentShader) {
+    console.warn('着色器不能为空');
+    return;
+  }
+  let program = gl.createProgram();
+  gl.attachShader(program, vertexShader);
+  gl.attachShader(program, fragmentShader);
+  gl.linkProgram(program);
+  let success = gl.getProgramParameter(program, gl.LINK_STATUS);
+  if (success) {
+    return program;
+  }
+  console.error(gl.getProgramInfoLog(program));
+  gl.deleteProgram(program);
+}
+
+function $$(str) {
+  if (!str) return null;
+  if (str.startsWith('#')) {
+    return document.querySelector(str);
+  }
+  let result = document.querySelectorAll(str);
+  if (result.length == 1) {
+    return result[0];
+  }
+  return result;
+}
 ```
 
 ## 解释
@@ -139,8 +212,8 @@
 - vec4：4 维向量容器，可以存储 4 个浮点数。
 - precision：精度设置限定符，使用此限定符设置完精度后，之后所有该数据类型都将沿用该精度，除非单独设置。
 - 运算符：向量的对应位置进行运算，得到一个新的向量。
-  - vec _ 浮点数： vec2(x, y) _ 2.0 = vec(x _ 2.0, y _ 2.0)。
-  - vec2 _ vec2：vec2(x1, y1) _ vec2(x2, y2) = vec2(x1 _ x2, y1 _ y2)。
+  - vec _浮点数： vec2(x, y)_ 2.0 = vec(x _2.0, y_ 2.0)。
+  - vec2 _vec2：vec2(x1, y1)_ vec2(x2, y2) = vec2(x1 _x2, y1_ y2)。
   - 加减乘除规则基本一致。但是要注意一点，如果参与运算的是两个 vec 向量，那么这两个 vec 的维数必须相同。
 
 ### JavaScript 程序如何连接着色器程序

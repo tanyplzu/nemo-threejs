@@ -79,6 +79,7 @@ export default defineConfig({
           '/threejs/Vector3_2.md',
           '/threejs/Matrix4.md',
           '/threejs/类型化数组.md',
+          '/threejs/本地坐标&世界坐标.md',
         ],
       },
       {
