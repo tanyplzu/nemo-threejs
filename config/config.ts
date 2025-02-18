@@ -81,6 +81,10 @@ export default defineConfig({
           '/threejs/类型化数组.md',
         ],
       },
+      {
+        title: 'ThreeJS例子笔记',
+        children: ['/threejs/examples/webgl_lines_fat.md'],
+      },
     ],
     '/threejs-demo': [
       {
